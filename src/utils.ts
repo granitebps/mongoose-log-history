@@ -146,8 +146,14 @@ export function areValuesEqual(a: unknown, b: unknown): boolean {
  */
 export function getValueByPath(obj: Record<string, unknown> | null | undefined, path: string): unknown {
   if (!obj) return undefined;
+
+  let current: unknown = obj[path];
+  if (current) {
+    return current;
+  }
+
   const segments = path.split('.');
-  let current: unknown = obj;
+  current = obj;
   for (const segment of segments) {
     if (current === null) {
       return undefined;

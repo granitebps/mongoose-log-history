@@ -123,10 +123,17 @@ describe('utils', () => {
       expect(getValueByPath(obj, 'a.b.c')).toBe(42);
       expect(getValueByPath(obj, 'a.b')).toEqual({ c: 42 });
       expect(getValueByPath(obj, 'a.x')).toBeUndefined();
+      expect(getValueByPath(obj, 'x')).toBeUndefined();
+      expect(getValueByPath(obj, '')).toBeUndefined();
     });
     it('returns undefined for missing object', () => {
       expect(getValueByPath(null, 'a.b')).toBeUndefined();
       expect(getValueByPath(undefined, 'a.b')).toBeUndefined();
+    });
+    it('handles dot notation fields', () => {
+      const obj = { 'a.b.c': 42 };
+      expect(getValueByPath(obj, 'a.b.c')).toBe(42);
+      expect(getValueByPath(obj, 'a.b')).toBeUndefined();
     });
   });
 
