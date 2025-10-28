@@ -159,4 +159,28 @@ describe('mongoose-log-history plugin - Option Validation', () => {
       });
     }).toThrow(/modelKeyId/);
   });
+
+  it('throws if maskedValue config is invalid', () => {
+    const schema = new mongoose.Schema({ status: String });
+    expect(() => {
+      schema.plugin(changeLoggingPlugin, {
+        modelName: 'Order',
+        trackedFields: [{ value: 'status', maskedValue: true }],
+      });
+    }).toThrow(/masked/);
+
+    expect(() => {
+      schema.plugin(changeLoggingPlugin, {
+        modelName: 'Order',
+        trackedFields: [{ value: 'status', maskedValue: new Date() }],
+      });
+    }).toThrow(/masked/);
+
+    expect(() => {
+      schema.plugin(changeLoggingPlugin, {
+        modelName: 'Order',
+        trackedFields: [{ value: 'status', maskedValue: { invalid: true } }],
+      });
+    }).toThrow(/masked/);
+  });
 });

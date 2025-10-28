@@ -69,6 +69,12 @@ export interface TrackedField {
    */
   valueField?: string;
 
+  /**
+   * When defined, the value for this field field is masked in the logs.
+   * This is useful for sensitive information that should not be stored in logs.
+   */
+  maskedValue?: string | ((value: unknown) => string | null | undefined);
+
   /** Additional context fields to include in logs for this specific field */
   contextFields?: ContextFields;
 
@@ -258,6 +264,11 @@ export interface LogHistoryDocument extends Omit<Document, 'model'> {
 export interface LogHistoryModel extends Model<LogHistoryDocument> {}
 
 /**
+ * A mapping of field paths to their masked values or masking functions.
+ */
+export type MaskedValues = Record<string, string | ((value: unknown) => string | null | undefined)>;
+
+/**
  * Parameters for building a log entry.
  */
 export interface BuildLogEntryParams {
@@ -271,6 +282,7 @@ export interface BuildLogEntryParams {
   context?: Record<string, unknown>;
   saveWholeDoc?: boolean;
   compressDocs?: boolean;
+  maskedValues?: MaskedValues;
 }
 
 /**

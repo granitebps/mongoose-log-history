@@ -11,11 +11,20 @@ import {
   FieldLog,
   ChangeType,
   BuildLogEntryParams,
+  MaskedValues,
 } from './types';
 import { getLogHistoryModel } from './schema';
 import { getTrackedChanges, extractLogContext } from './change-tracking';
 import { compressObject, decompressObject } from './compression';
-import { getValueByPath, arrayToKeyMap, isEqual, validatePluginOptions, deepClone } from './utils';
+import {
+  getValueByPath,
+  arrayToKeyMap,
+  isEqual,
+  validatePluginOptions,
+  deepClone,
+  extractMaskedValues,
+  maskLogs,
+} from './utils';
 
 /**
  * Build a log entry object compatible with the plugin's log schema.
@@ -69,7 +78,8 @@ export function buildLogEntry(
   updated_doc?: unknown,
   context?: Record<string, unknown>,
   saveWholeDoc?: boolean,
-  compressDocs?: boolean
+  compressDocs?: boolean,
+  maskedValues?: MaskedValues
 ): LogHistoryEntry;
 export function buildLogEntry(params: BuildLogEntryParams): LogHistoryEntry;
 export function buildLogEntry(
@@ -82,7 +92,8 @@ export function buildLogEntry(
   updated_doc?: unknown,
   context?: Record<string, unknown>,
   saveWholeDoc?: boolean,
-  compressDocs?: boolean
+  compressDocs?: boolean,
+  maskedValues?: MaskedValues
 ): LogHistoryEntry {
   let params: BuildLogEntryParams;
 
@@ -102,6 +113,7 @@ export function buildLogEntry(
       context,
       saveWholeDoc: saveWholeDoc || false,
       compressDocs: compressDocs || false,
+      maskedValues: maskedValues || undefined,
     };
   }
 
@@ -116,13 +128,14 @@ export function buildLogEntry(
     context: contextData = null,
     saveWholeDoc: saveWholeDocument = false,
     compressDocs: compressDocuments = false,
+    maskedValues: masks,
   } = params;
 
   const entry: LogHistoryEntry = {
     model: modelName,
     model_id,
     change_type: changeType,
-    logs: fieldLogs,
+    logs: maskLogs(fieldLogs, masks),
     created_by: createdBy,
     is_deleted: false,
     created_at: new Date(),
@@ -135,11 +148,15 @@ export function buildLogEntry(
   if (saveWholeDocument) {
     entry.original_doc = originalDoc
       ? compressDocuments
-        ? compressObject(originalDoc)
-        : deepClone(originalDoc)
+        ? compressObject(masks ? deepClone(originalDoc, masks) : originalDoc)
+        : deepClone(originalDoc, masks)
       : null;
 
-    entry.updated_doc = updatedDoc ? (compressDocuments ? compressObject(updatedDoc) : deepClone(updatedDoc)) : null;
+    entry.updated_doc = updatedDoc
+      ? compressDocuments
+        ? compressObject(masks ? deepClone(updatedDoc, masks) : updatedDoc)
+        : deepClone(updatedDoc, masks)
+      : null;
   }
 
   return entry;
@@ -163,6 +180,7 @@ export class ChangeLogPlugin {
   public readonly logger: Logger;
   public readonly userField: string;
   public readonly compressDocs: boolean;
+  public readonly maskedValues?: MaskedValues;
 
   constructor(options: PluginOptions & { modelName: string }) {
     validatePluginOptions(options);
@@ -179,6 +197,7 @@ export class ChangeLogPlugin {
     this.logger = options.logger ?? console;
     this.userField = options.userField ?? 'created_by';
     this.compressDocs = options.compressDocs === true;
+    this.maskedValues = extractMaskedValues(this.trackedFields);
   }
 
   /**
@@ -530,6 +549,7 @@ export class ChangeLogPlugin {
         context,
         saveWholeDoc: this.saveWholeDoc,
         compressDocs: this.compressDocs,
+        maskedValues: this.maskedValues,
       });
 
       await LogHistory.create(logEntry);
@@ -582,6 +602,7 @@ export class ChangeLogPlugin {
           context,
           saveWholeDoc: this.saveWholeDoc,
           compressDocs: this.compressDocs,
+          maskedValues: this.maskedValues,
         });
 
         return {

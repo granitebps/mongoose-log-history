@@ -1,4 +1,5 @@
-import { ArrayDiff, PluginOptions, TrackedField } from './types';
+import { Types } from 'mongoose';
+import { ArrayDiff, FieldLog, MaskedValues, PluginOptions, TrackedField } from './types';
 
 /**
  * Time unit mapping for parsing human-readable time strings.
@@ -311,6 +312,12 @@ export function validateTrackedField(field: TrackedField, path: string): void {
     }
   }
 
+  if (field.maskedValue !== undefined) {
+    if (typeof field.maskedValue !== 'string' && typeof field.maskedValue !== 'function') {
+      throw new Error(`[mongoose-log-history] "maskedValue" in ${path}.${field.value} must be a string or a function.`);
+    }
+  }
+
   if (field.trackedFields !== undefined) {
     if (!Array.isArray(field.trackedFields)) {
       throw new Error(
@@ -380,9 +387,11 @@ export function validatePluginOptions(options: PluginOptions & { modelName: stri
 /**
  * Deep clone an object to prevent mutations.
  * @param obj - The object to clone.
+ * @param maskedValues - Optional mapping of field paths to masked values or functions.
+ * @param parentPath - The parent path for the current object (used for masking).
  * @returns A deep copy of the object.
  */
-export function deepClone<T>(obj: T): T {
+export function deepClone<T>(obj: T, maskedValues?: MaskedValues, parentPath?: string): T {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
@@ -391,14 +400,32 @@ export function deepClone<T>(obj: T): T {
     return new Date(obj.getTime()) as T;
   }
 
+  if (obj instanceof Types.ObjectId) {
+    return obj as T;
+  }
+
   if (Array.isArray(obj)) {
-    return obj.map((item) => deepClone(item)) as T;
+    return obj.map((item) => deepClone(item, maskedValues, parentPath)) as T;
   }
 
   if (isObject(obj)) {
     const cloned: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj)) {
-      cloned[key] = deepClone(value);
+      const fullKey = parentPath ? `${parentPath}.${key}` : key;
+      if (maskedValues) {
+        const maskedValue = maskedValues[fullKey];
+        if (maskedValue !== undefined) {
+          if (typeof maskedValue === 'function') {
+            cloned[key] = maskedValue(value);
+          } else {
+            cloned[key] = maskedValue;
+          }
+
+          continue;
+        }
+      }
+
+      cloned[key] = deepClone(value, maskedValues, fullKey);
     }
     return cloned as T;
   }
@@ -456,4 +483,66 @@ export function parseHumanTime(str: string | Date | number | null | undefined): 
   const now = Date.now();
 
   return new Date(now - ms);
+}
+
+/**
+ * Returns a mapping of field paths to their masked values or masking functions.
+ *
+ * @param trackedFields The array of tracked fields from plugin options.
+ * @returns A mapping of field paths to their masked values or masking functions or null if there are no masked fields.
+ */
+export function extractMaskedValues(trackedFields: TrackedField[]): MaskedValues | undefined {
+  const maskedValues: MaskedValues = {};
+
+  function extract(fields: TrackedField[], parentPath: string): void {
+    for (const field of fields) {
+      const fieldPath = parentPath ? `${parentPath}.${field.value}` : field.value;
+
+      if (field.maskedValue !== undefined) {
+        if (typeof field.maskedValue !== 'string' && typeof field.maskedValue !== 'function') {
+          throw new Error(`[mongoose-log-history] "maskedValue" in ${fieldPath} must be a string or a function.`);
+        }
+
+        maskedValues[fieldPath] = field.maskedValue;
+      }
+
+      if (field.trackedFields) {
+        extract(field.trackedFields, fieldPath);
+      }
+    }
+  }
+
+  extract(trackedFields, '');
+  return Object.keys(maskedValues).length > 0 ? maskedValues : undefined;
+}
+
+export function maskLogs(logs: FieldLog[], maskedValues?: MaskedValues): FieldLog[] {
+  if (!maskedValues) {
+    return logs;
+  }
+
+  return logs.map((log) => {
+    const mask = maskedValues[log.field_name];
+    if (!mask) {
+      return log;
+    }
+
+    if (log.from_value) {
+      if (typeof mask === 'function') {
+        log.from_value = mask(log.from_value);
+      } else {
+        log.from_value = mask;
+      }
+    }
+
+    if (log.to_value) {
+      if (typeof mask === 'function') {
+        log.to_value = mask(log.to_value);
+      } else {
+        log.to_value = mask;
+      }
+    }
+
+    return log;
+  });
 }
