@@ -27,12 +27,14 @@ export interface Logger {
 /**
  * Soft delete configuration for detecting delete operations.
  */
-export interface SoftDeleteConfig {
-  /** The field path to check for soft delete status */
-  field: string;
-  /** The value that indicates a document is soft deleted */
-  value: unknown;
-}
+export type SoftDeleteConfig =
+  | {
+      /** The field path to check for soft delete status */
+      field: string;
+      /** The value that indicates a document is soft deleted */
+      value: unknown;
+    }
+  | ((doc: Record<string, unknown>) => boolean);
 
 /**
  * Context fields configuration for extracting additional metadata.

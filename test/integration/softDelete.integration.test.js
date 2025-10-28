@@ -2,7 +2,10 @@ require('../setup/mongodb');
 const mongoose = require('mongoose');
 const { changeLoggingPlugin, getLogHistoryModel } = require('../../dist');
 
-describe('mongoose-log-history plugin - Soft Delete', () => {
+describe.each([
+  { softDelete: { field: 'status', value: 'deleted' }, testCase: 'object config' },
+  { softDelete: (doc) => doc.status === 'deleted', testCase: 'function config' },
+])('mongoose-log-history plugin - Soft Delete with $testCase', (options) => {
   let Order;
   let LogHistory;
 
@@ -16,11 +19,8 @@ describe('mongoose-log-history plugin - Soft Delete', () => {
       modelName: 'Order',
       trackedFields: [{ value: 'status' }],
       singleCollection: true,
-      softDelete: {
-        field: 'status',
-        value: 'deleted',
-      },
       maxBatchLog: 5,
+      softDelete: options.softDelete,
     });
 
     Order = mongoose.model('Order', orderSchema);
@@ -30,6 +30,10 @@ describe('mongoose-log-history plugin - Soft Delete', () => {
   afterEach(async () => {
     await Order.deleteMany({});
     await LogHistory.deleteMany({});
+  });
+
+  afterAll(() => {
+    mongoose.deleteModel('Order');
   });
 
   const wait = () => new Promise((resolve) => setTimeout(resolve, 100));

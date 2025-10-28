@@ -180,20 +180,20 @@ const Order = mongoose.model<IOrder>('Order', orderSchema);
 
 ## Configuration Options
 
-| Option             | Type    | Default      | Description                                                                                                                                            |
-| ------------------ | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `modelName`        | string  | model name   | Model identification (REQUIRED)                                                                                                                        |
-| `modelKeyId`       | string  | `_id`        | ID key that identifies the model                                                                                                                       |
-| `softDelete`       | object  |              | Soft delete config: `{ field, value }`. When the specified field is set to the given value, the plugin logs a `delete` operation instead of an update. |
-| `contextFields`    | array   |              | Extra fields to include in the log context (array of field paths from the document itself; must be an array at the plugin level)                       |
-| `singleCollection` | boolean | `false`      | Use a single log collection for all models (`log_histories`)                                                                                           |
-| `saveWholeDoc`     | boolean | `false`      | Save full original/updated docs in the log                                                                                                             |
-| `maxBatchLog`      | number  | `1000`       | Max number of logs per batch operation                                                                                                                 |
-| `batchSize`        | number  | `100`        | Number of documents to process per batch in bulk hooks                                                                                                 |
-| `logger`           | object  | `console`    | Custom logger object (must support `.error` and `.warn` methods)                                                                                       |
-| `trackedFields`    | array   | `[]`         | Array of field configs to track (see below)                                                                                                            |
-| `userField`        | string  | `created_by` | The field in the document to extract user info from (dot notation supported). Value can be any type (object, string, ID, etc.).                        |
-| `compressDocs`     | boolean | `false`      | Compress `original_doc` and `updated_doc` using gzip.                                                                                                  |
+| Option             | Type            | Default      | Description                                                                                                                                            |
+| ------------------ | --------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `modelName`        | string          | model name   | Model identification (REQUIRED)                                                                                                                        |
+| `modelKeyId`       | string          | `_id`        | ID key that identifies the model                                                                                                                       |
+| `softDelete`       | object/function |              | Soft delete config: `{ field, value }`. When the specified field is set to the given value, the plugin logs a `delete` operation instead of an update. |
+| `contextFields`    | array           |              | Extra fields to include in the log context (array of field paths from the document itself; must be an array at the plugin level)                       |
+| `singleCollection` | boolean         | `false`      | Use a single log collection for all models (`log_histories`)                                                                                           |
+| `saveWholeDoc`     | boolean.        | `false`      | Save full original/updated docs in the log                                                                                                             |
+| `maxBatchLog`      | number          | `1000`       | Max number of logs per batch operation                                                                                                                 |
+| `batchSize`        | number          | `100`        | Number of documents to process per batch in bulk hooks                                                                                                 |
+| `logger`           | object          | `console`    | Custom logger object (must support `.error` and `.warn` methods)                                                                                       |
+| `trackedFields`    | array           | `[]`         | Array of field configs to track (see below)                                                                                                            |
+| `userField`        | string          | `created_by` | The field in the document to extract user info from (dot notation supported). Value can be any type (object, string, ID, etc.).                        |
+| `compressDocs`     | boolean         | `false`      | Compress `original_doc` and `updated_doc` using gzip.                                                                                                  |
 
 ---
 
@@ -221,6 +221,7 @@ The `softDelete` option allows you to track "soft deletes"—where a document is
 
 - `field`: The name of the field that indicates deletion (e.g., `"status"` or `"is_deleted"`).
 - `value`: The value that means the document is considered deleted (e.g., `"deleted"` or `true`).
+- (doc: unknown): boolean : A function that takes the document and returns true if it was soft-deleted.
 
 **Example:**
 
@@ -232,6 +233,14 @@ softDelete: {
 ```
 
 When you update a document and set `status` to `'deleted'`, the plugin will log this as a `delete` operation in the history.
+
+**Example function:**
+
+The `softDelete` option can also be a function that returns true if the document was soft deleted or not.
+
+```js
+softDelete: function(doc) { return doc.deletedAt !== undefined ; }
+```
 
 ---
 
