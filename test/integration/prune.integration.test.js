@@ -26,11 +26,8 @@ describe('mongoose-log-history plugin - Pruning Utility', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('prunes logs older than a given date', async () => {
     const order = await Order.create({ status: 'pending' });
-    await wait();
 
     const oldLog = await LogHistory.findOne({ model_id: order._id });
     const db = mongoose.connection.db;
@@ -40,7 +37,6 @@ describe('mongoose-log-history plugin - Pruning Utility', () => {
 
     order.status = 'done';
     await order.save();
-    await wait();
 
     const deleted = await pruneLogHistory({
       modelName: 'OrderPrune',
@@ -59,7 +55,6 @@ describe('mongoose-log-history plugin - Pruning Utility', () => {
     for (let i = 0; i < 5; i++) {
       order.status = `status${i}`;
       await order.save();
-      await wait();
     }
     let logs = await LogHistory.find({ model_id: order._id }).sort({ created_at: 1 }).lean();
     expect(logs.length).toBe(6);
@@ -80,13 +75,11 @@ describe('mongoose-log-history plugin - Pruning Utility', () => {
   it('prunes logs for a specific modelId', async () => {
     const order1 = await Order.create({ status: 'pending' });
     const order2 = await Order.create({ status: 'pending' });
-    await wait();
 
     order1.status = 'done';
     await order1.save();
     order2.status = 'done';
     await order2.save();
-    await wait();
 
     const deleted = await pruneLogHistory({
       modelName: 'OrderPrune',
@@ -114,7 +107,6 @@ describe('mongoose-log-history plugin - Pruning Utility', () => {
     const order = await Order.create({ status: 'pending' });
     order.status = 'done';
     await order.save();
-    await wait();
 
     const deleted = await pruneLogHistory({
       modelName: 'OrderPrune',

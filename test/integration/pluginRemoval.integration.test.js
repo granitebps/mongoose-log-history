@@ -27,13 +27,10 @@ describe('mongoose-log-history plugin - Plugin Removal', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('does not log for model without plugin', async () => {
     const order = await OrderWithoutPlugin.create({ status: 'pending' });
     order.status = 'done';
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(0);
@@ -47,7 +44,6 @@ describe('mongoose-log-history plugin - Plugin Removal', () => {
     await orderWith.save();
     orderWithout.status = 'done';
     await orderWithout.save();
-    await wait();
 
     const logsWith = await LogHistory.find({ model_id: orderWith._id }).lean();
     const logsWithout = await LogHistory.find({ model_id: orderWithout._id }).lean();

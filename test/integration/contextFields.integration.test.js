@@ -55,14 +55,11 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('includes global contextFields in log', async () => {
     const order = await Order.create({
       status: 'pending',
       user: { name: 'Alice', role: 'admin' },
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -79,7 +76,6 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     await LogHistory.deleteMany({});
     order.status = 'done';
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -97,7 +93,6 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     await LogHistory.deleteMany({});
     order.items = [{ sku: 'A', qty: 2, meta: { color: 'blue' } }];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -113,7 +108,6 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     const order = await Order.create({
       status: 'pending',
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -126,7 +120,6 @@ describe('mongoose-log-history plugin - Context Fields', () => {
       status: 'pending',
       user: { name: null, role: undefined },
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -142,7 +135,6 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     await LogHistory.deleteMany({});
     order.items = [{ sku: 'B', qty: 2 }];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);

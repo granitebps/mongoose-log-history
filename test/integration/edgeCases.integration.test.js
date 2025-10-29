@@ -32,8 +32,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('does not log if no tracked fields are configured', async () => {
     const schema = new mongoose.Schema({ foo: String });
     schema.plugin(changeLoggingPlugin, {
@@ -46,10 +44,9 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     const LogHistoryNoTracked = getLogHistoryModel('NoTrackedFields', true);
 
     const doc = await NoTrackedFields.create({ foo: 'bar' });
-    await wait();
+
     doc.foo = 'baz';
     await doc.save();
-    await wait();
 
     const logs = await LogHistoryNoTracked.find({ model_id: doc._id }).lean();
 
@@ -61,7 +58,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     const order = await Order.create({ status: 'pending' });
     await LogHistory.deleteMany({});
     await Order.updateOne({ _id: order._id }, {});
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);
@@ -69,12 +65,10 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
 
   it('handles null/undefined values gracefully', async () => {
     const order = await Order.create({ status: null, tags: undefined });
-    await wait();
 
     order.status = 'active';
     order.tags = ['a'];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -84,7 +78,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     order.status = null;
     order.tags = undefined;
     await order.save();
-    await wait();
 
     const logs2 = await LogHistory.find({ model_id: order._id, change_type: 'update' }).sort({ created_at: -1 }).lean();
     expect(logs2.length).toBeGreaterThanOrEqual(1);
@@ -95,12 +88,10 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
   it('handles large documents', async () => {
     const bigString = 'x'.repeat(100000);
     const order = await Order.create({ status: 'pending', data: bigString });
-    await wait();
 
     order.status = 'done';
     order.data = `${bigString}y`;
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(2);
@@ -115,7 +106,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     for (let i = 0; i < 3; i++) {
       order.status = 'pending';
       await order.save();
-      await wait();
     }
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);
@@ -126,7 +116,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
     await LogHistory.deleteMany({});
     order.nested = { foo: 'bar', bar: 42 };
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
 
@@ -135,7 +124,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
 
     order.nested.bar = 99;
     await order.save();
-    await wait();
 
     const logs2 = await LogHistory.find({ model_id: order._id, change_type: 'update' }).sort({ created_at: -1 }).lean();
 
@@ -144,11 +132,9 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
 
   it('handles deeply nested missing fields gracefully', async () => {
     const order = await Order.create({});
-    await wait();
 
     order.nested = { foo: 'deep' };
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -157,11 +143,9 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
 
   it('handles empty arrays', async () => {
     const order = await Order.create({ tags: [] });
-    await wait();
 
     order.tags = ['a'];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -169,7 +153,6 @@ describe('mongoose-log-history plugin - Edge Cases', () => {
 
     order.tags = [];
     await order.save();
-    await wait();
 
     const logs2 = await LogHistory.find({ model_id: order._id, change_type: 'update' }).sort({ created_at: -1 }).lean();
     expect(logs2.length).toBeGreaterThanOrEqual(1);

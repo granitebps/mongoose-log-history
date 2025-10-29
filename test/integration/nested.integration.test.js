@@ -51,15 +51,12 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('logs edit for nested object field', async () => {
     const order = await Order.create({ customer: { name: 'Alice', address: { city: 'Jakarta', zip: '12345' } } });
     await LogHistory.deleteMany({});
     order.customer.name = 'Bob';
     order.customer.address.city = 'Bandung';
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -73,7 +70,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
     await LogHistory.deleteMany({});
     order.customer = { name: 'Alice', address: { city: 'Jakarta', zip: '12345' } };
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -83,7 +79,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
 
     order.customer = undefined;
     await order.save();
-    await wait();
 
     const logs2 = await LogHistory.find({ model_id: order._id, change_type: 'update' }).sort({ created_at: -1 }).lean();
     expect(logs2.length).toBeGreaterThanOrEqual(1);
@@ -107,7 +102,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
       { sku: 'B', details: { color: 'blue', size: 'L' }, qty: 2 },
     ];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -125,7 +119,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
     order.customer = { name: 'Alice', address: { city: 'Jakarta', zip: '12345' } };
     order.items = [{ sku: 'A', details: { color: 'red', size: 'M' }, qty: 1 }];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);
@@ -138,7 +131,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
     await LogHistory.deleteMany({});
     order.customer = null;
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -157,7 +149,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
       { sku: 'B', details: { color: 'blue', size: 'L' }, qty: 2 },
     ];
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -166,7 +157,6 @@ describe('mongoose-log-history plugin - Nested Field Tracking', () => {
 
     order.items = [{ sku: 'A', details: { color: 'red', size: 'M' }, qty: 1 }];
     await order.save();
-    await wait();
 
     const logs2 = await LogHistory.find({ model_id: order._id, change_type: 'update' }).sort({ created_at: -1 }).lean();
     expect(logs2.length).toBeGreaterThanOrEqual(1);

@@ -9,8 +9,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
     }
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('extracts user from userField (dot notation, nested)', async () => {
     const schema = new mongoose.Schema({
       status: String,
@@ -33,7 +31,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       status: 'pending',
       user: { name: 'Alice', email: 'alice@example.com' },
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -59,7 +56,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       status: 'pending',
       updated_by: 'Bob',
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -88,7 +84,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       { $set: { status: 'done' } },
       { context: { user: 'ContextUser' } }
     );
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -117,7 +112,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       status: 'pending',
       created_by: { id: new mongoose.Types.ObjectId(), name: 'Fallback', role: 'admin' },
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -142,7 +136,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       status: 'pending',
       updated_by: 'UpdatedFallback',
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -167,7 +160,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       status: 'pending',
       modified_by: 'ModifiedFallback',
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -190,7 +182,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
     const order = await OrderNoUser.create({
       status: 'pending',
     });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
@@ -224,7 +215,6 @@ describe('mongoose-log-history plugin - User Extraction', () => {
       { $set: { status: 'done' } },
       { context: { user: 'ContextWins' } }
     );
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);

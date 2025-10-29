@@ -39,13 +39,10 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('logs update via save (doc update)', async () => {
     const order = await Order.create({ status: 'pending' });
     order.status = 'done';
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -61,7 +58,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via updateOne', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.updateOne({ _id: order._id }, { $set: { status: 'done' } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -76,7 +72,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via updateOne with upsert (creates doc and logs create)', async () => {
     const upsertId = new mongoose.Types.ObjectId();
     await Order.updateOne({ _id: upsertId }, { $set: { status: 'upserted' } }, { upsert: true });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: upsertId }).lean();
     expect(logs.length).toBe(1);
@@ -88,7 +83,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via findOneAndUpdate', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.findOneAndUpdate({ _id: order._id }, { $set: { status: 'done' } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -103,7 +97,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via findOneAndUpdate with upsert (creates doc and logs create)', async () => {
     const upsertId = new mongoose.Types.ObjectId();
     await Order.findOneAndUpdate({ _id: upsertId }, { $set: { status: 'upserted' } }, { upsert: true });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: upsertId }).lean();
     expect(logs.length).toBe(1);
@@ -116,7 +109,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
     const order1 = await Order.create({ status: 'pending' });
     const order2 = await Order.create({ status: 'pending' });
     await Order.updateMany({}, { $set: { status: 'done' } });
-    await wait();
 
     const logs1 = await LogHistory.find({ model_id: order1._id, change_type: 'update' }).lean();
     const logs2 = await LogHistory.find({ model_id: order2._id, change_type: 'update' }).lean();
@@ -131,7 +123,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via replaceOne', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.replaceOne({ _id: order._id }, { status: 'done' });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -146,7 +137,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('logs update via findOneAndReplace', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.findOneAndReplace({ _id: order._id }, { status: 'done' });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -161,7 +151,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('does not log when updating to the same value (no-op)', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.updateOne({ _id: order._id }, { $set: { status: 'pending' } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);
@@ -170,7 +159,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('does not log when updating untracked fields', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.updateOne({ _id: order._id }, { $set: { tags: ['a', 'b'] } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);
@@ -179,7 +167,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('handles update with null/undefined values', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.updateOne({ _id: order._id }, { $set: { status: null } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -190,7 +177,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
     const order = await Order.create({ status: 'pending' });
     const bigString = 'x'.repeat(10000);
     await Order.updateOne({ _id: order._id }, { $set: { status: bigString } });
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(1);
@@ -200,7 +186,6 @@ describe('mongoose-log-history plugin - Update Operation (all hooks and edge cas
   it('handles update with missing/invalid input gracefully', async () => {
     const order = await Order.create({ status: 'pending' });
     await Order.updateOne({ _id: order._id }, {});
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
     expect(logs.length).toBe(0);

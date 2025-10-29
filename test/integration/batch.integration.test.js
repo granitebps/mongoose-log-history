@@ -29,12 +29,9 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('logs create for each doc in insertMany', async () => {
     const docs = [{ status: 'a' }, { status: 'b' }, { status: 'c' }];
     const inserted = await Order.insertMany(docs);
-    await wait();
 
     for (const doc of inserted) {
       const logs = await LogHistory.find({ model_id: doc._id, change_type: 'create' }).lean();
@@ -47,7 +44,6 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     const orders = await Order.insertMany([{ status: 'a' }, { status: 'a' }, { status: 'b' }]);
     await LogHistory.deleteMany({});
     await Order.updateMany({ status: 'a' }, { $set: { status: 'z' } });
-    await wait();
 
     for (const order of orders.filter((o) => o.status === 'a')) {
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
@@ -64,7 +60,6 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     const orders = await Order.insertMany([{ status: 'a' }, { status: 'a' }, { status: 'b' }]);
     await LogHistory.deleteMany({});
     await Order.deleteMany({ status: 'a' });
-    await wait();
 
     for (const order of orders.filter((o) => o.status === 'a')) {
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'delete' }).lean();
@@ -78,7 +73,7 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
 
   it('does not log for empty insertMany', async () => {
     const inserted = await Order.insertMany([]);
-    await wait();
+
     expect(inserted.length).toBe(0);
     const logs = await LogHistory.find({ change_type: 'create' }).lean();
     expect(logs.length).toBe(0);
@@ -95,7 +90,6 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     ]);
     await LogHistory.deleteMany({});
     await Order.updateMany({}, { $set: { status: 'z' } });
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'update' }).lean();
     expect(logs.length).toBe(5);
@@ -105,7 +99,6 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     await Order.insertMany([{ status: 'a' }, { status: 'a' }, { status: 'a' }, { status: 'a' }]);
     await LogHistory.deleteMany({});
     await Order.updateMany({}, { $set: { status: 'z' } });
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'update' }).lean();
     expect(logs.length).toBe(4);
@@ -114,7 +107,6 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
   it('handles duplicate _id in insertMany gracefully', async () => {
     const id = new mongoose.Types.ObjectId();
     await Order.insertMany([{ _id: id, status: 'a' }]);
-    await wait();
 
     await expect(Order.insertMany([{ _id: id, status: 'b' }])).rejects.toThrow();
 
@@ -124,7 +116,7 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
 
   it('handles missing fields in insertMany', async () => {
     const [order] = await Order.insertMany([{}]);
-    await wait();
+
     const logs = await LogHistory.find({ model_id: order._id, change_type: 'create' }).lean();
     expect(logs.length).toBe(1);
     expect(logs[0].logs.length).toBe(0);
@@ -135,7 +127,7 @@ describe('mongoose-log-history plugin - Batch Operations', () => {
     await LogHistory.deleteMany({});
     await Order.updateMany({ status: 'notfound' }, { $set: { status: 'z' } });
     await Order.deleteMany({ status: 'notfound' });
-    await wait();
+
     const logs = await LogHistory.find({ change_type: { $in: ['update', 'delete'] } }).lean();
     expect(logs.length).toBe(0);
   });

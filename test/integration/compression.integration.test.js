@@ -30,11 +30,8 @@ describe('mongoose-log-history plugin - Compression', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('stores updated_doc as Binary (compressed) and original_doc as null on create', async () => {
     const order = await Order.create({ status: 'pending', data: 'x'.repeat(1000) });
-    await wait();
 
     const log = await LogHistory.findOne({ model_id: order._id, change_type: 'create' });
     expect(log.original_doc).toBeNull();
@@ -43,7 +40,6 @@ describe('mongoose-log-history plugin - Compression', () => {
 
   it('automatically decompresses docs in getHistoriesById', async () => {
     const order = await Order.create({ status: 'pending', data: 'foo' });
-    await wait();
 
     const logs = await Order.getHistoriesById(order._id);
     expect(logs.length).toBe(1);
@@ -55,7 +51,6 @@ describe('mongoose-log-history plugin - Compression', () => {
 
   it('manual decompressObject works on Binary', async () => {
     const order = await Order.create({ status: 'pending', data: 'bar' });
-    await wait();
 
     const log = await LogHistory.findOne({ model_id: order._id, change_type: 'create' });
     const buf = log.updated_doc._bsontype === 'Binary' ? log.updated_doc.buffer : log.updated_doc;
@@ -95,7 +90,6 @@ describe('mongoose-log-history plugin - Compression', () => {
     order.status = 'done';
     order.data = 'bar';
     await order.save();
-    await wait();
 
     const log = await LogHistory.findOne({ model_id: order._id, change_type: 'update' });
     expect(log.original_doc).toBeInstanceOf(Binary);
