@@ -206,6 +206,14 @@ export class ChangeLogPlugin {
       }
     }
 
+    const locals = (doc as { $locals?: Record<string, unknown> } | null | undefined)?.$locals;
+    if (locals && userField) {
+      const userFromLocals = getValueByPath(locals, userField);
+      if (userFromLocals !== undefined && userFromLocals !== null) {
+        return userFromLocals;
+      }
+    }
+
     if (doc && userField) {
       const userFromDoc = getValueByPath(doc, userField);
       if (userFromDoc !== undefined && userFromDoc !== null) {
@@ -764,6 +772,7 @@ export class ChangeLogPlugin {
 
         const user = self.extractUser({
           doc: doc.toObject(),
+          context: (doc as { $locals?: Record<string, unknown> } | null | undefined)?.$locals,
           userField: self.userField,
         });
 
@@ -844,6 +853,7 @@ export class ChangeLogPlugin {
                 | Types.ObjectId;
               const userData = self.extractUser({
                 doc: doc.toObject ? doc.toObject() : doc,
+                context: (doc as { $locals?: Record<string, unknown> } | null | undefined)?.$locals,
                 userField: self.userField,
               });
 
@@ -990,6 +1000,81 @@ export class ChangeLogPlugin {
   }
 }
 
+function collectTrackedFieldPaths(fields: TrackedField[], prefix = ''): string[] {
+  const paths: string[] = [];
+
+  for (const field of fields) {
+    if (!field?.value) continue;
+    const basePath = prefix ? `${prefix}.${field.value}` : field.value;
+    paths.push(basePath);
+
+    if (field.arrayKey) {
+      paths.push(`${basePath}.${field.arrayKey}`);
+    }
+    if (field.valueField) {
+      paths.push(`${basePath}.${field.valueField}`);
+    }
+
+    if (Array.isArray(field.trackedFields)) {
+      paths.push(...collectTrackedFieldPaths(field.trackedFields, basePath));
+    }
+
+    if (field.contextFields && !Array.isArray(field.contextFields)) {
+      const docFields = field.contextFields.doc ?? [];
+      for (const docField of docFields) {
+        paths.push(docField);
+      }
+
+      const itemFields = field.contextFields.item ?? [];
+      for (const itemField of itemFields) {
+        paths.push(`${basePath}.${itemField}`);
+      }
+    }
+  }
+
+  return paths;
+}
+
+function warnIfMissingSchemaPaths(schema: mongoose.Schema, plugin: ChangeLogPlugin): void {
+  const logger = plugin.logger || console;
+  const missing = new Set<string>();
+
+  const isMissingPath = (path: string): boolean => schema.pathType(path) === 'adhocOrUndefined';
+
+  const trackPaths = collectTrackedFieldPaths(plugin.trackedFields);
+  for (const path of trackPaths) {
+    if (isMissingPath(path)) {
+      missing.add(path);
+    }
+  }
+
+  for (const path of plugin.contextFields ?? []) {
+    if (isMissingPath(path)) {
+      missing.add(path);
+    }
+  }
+
+  if (plugin.userField && isMissingPath(plugin.userField)) {
+    missing.add(plugin.userField);
+  }
+
+  if (plugin.modelKeyId && isMissingPath(plugin.modelKeyId)) {
+    missing.add(plugin.modelKeyId);
+  }
+
+  if (plugin.softDelete?.field && isMissingPath(plugin.softDelete.field)) {
+    missing.add(plugin.softDelete.field);
+  }
+
+  if (missing.size > 0) {
+    logger.warn(
+      `[mongoose-log-history] Some configured fields are not present in the schema and may be stripped by Mongoose: ${[
+        ...missing,
+      ].join(', ')}. See https://github.com/granitebps/mongoose-log-history#missing-schema-fields`
+    );
+  }
+}
+
 /**
  * The main plugin function that can be used with Mongoose schemas.
  * This function creates a plugin instance and attaches all necessary hooks to the schema.
@@ -1003,6 +1088,8 @@ export function changeLoggingPlugin(schema: mongoose.Schema, options: PluginOpti
   }
 
   const pluginInstance = new ChangeLogPlugin({ ...options, modelName: options.modelName });
+
+  warnIfMissingSchemaPaths(schema, pluginInstance);
 
   (schema.statics as Record<string, unknown>).getHistoriesById = async function (
     modelId: string | number | Types.ObjectId,
