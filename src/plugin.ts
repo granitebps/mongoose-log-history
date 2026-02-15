@@ -1035,11 +1035,75 @@ function collectTrackedFieldPaths(fields: TrackedField[], prefix = ''): string[]
   return paths;
 }
 
+function hasSchemaPath(schema: mongoose.Schema, path: string): boolean {
+  if (!path) return false;
+  if (schema.pathType(path) !== 'adhocOrUndefined') return true;
+
+  const segments = path.split('.');
+  let currentSchema: mongoose.Schema | null = schema;
+  let index = 0;
+
+  while (currentSchema && index < segments.length) {
+    const remainingPath = segments.slice(index).join('.');
+    if (currentSchema.pathType(remainingPath) !== 'adhocOrUndefined') {
+      return true;
+    }
+
+    const segment = segments[index];
+    const schemaType = currentSchema.path(segment) as
+      | (mongoose.SchemaType & {
+          schema?: mongoose.Schema;
+          $embeddedSchemaType?: { schema?: mongoose.Schema };
+          $isMongooseMap?: boolean;
+          $__schemaType?: { schema?: mongoose.Schema };
+        })
+      | undefined;
+
+    if (!schemaType) {
+      return false;
+    }
+
+    if (index === segments.length - 1) {
+      return true;
+    }
+
+    if (schemaType.schema) {
+      currentSchema = schemaType.schema;
+      index += 1;
+      continue;
+    }
+
+    if (schemaType.$embeddedSchemaType?.schema) {
+      currentSchema = schemaType.$embeddedSchemaType.schema;
+      index += 1;
+      continue;
+    }
+
+    if (schemaType.$isMongooseMap) {
+      const mapValueSchema = schemaType.$__schemaType?.schema;
+      if (!mapValueSchema) {
+        return true;
+      }
+
+      index += 2;
+      if (index >= segments.length) {
+        return true;
+      }
+      currentSchema = mapValueSchema;
+      continue;
+    }
+
+    return false;
+  }
+
+  return false;
+}
+
 function warnIfMissingSchemaPaths(schema: mongoose.Schema, plugin: ChangeLogPlugin): void {
   const logger = plugin.logger || console;
   const missing = new Set<string>();
 
-  const isMissingPath = (path: string): boolean => schema.pathType(path) === 'adhocOrUndefined';
+  const isMissingPath = (path: string): boolean => !hasSchemaPath(schema, path);
 
   const trackPaths = collectTrackedFieldPaths(plugin.trackedFields);
   for (const path of trackPaths) {

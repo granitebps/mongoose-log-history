@@ -111,4 +111,31 @@ describe('mongoose-log-history plugin - Missing schema fields', () => {
     expect(logs.length).toBe(1);
     expect(logs[0].created_by).toEqual({ id: 'u4', name: 'LocalUser' });
   });
+
+  it('does not warn for tracked dotted path inside array of objects', () => {
+    const logger = {
+      warn: jest.fn(),
+      error: jest.fn(),
+    };
+
+    const schema = new mongoose.Schema({
+      created_by: mongoose.Schema.Types.Mixed,
+      invoices_address: [
+        {
+          street: String,
+          city: String,
+        },
+      ],
+    });
+
+    schema.plugin(changeLoggingPlugin, {
+      modelName: 'MissingFieldArrayNestedPath',
+      trackedFields: [{ value: 'invoices_address.street' }],
+      singleCollection: true,
+      userField: 'created_by',
+      logger,
+    });
+
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
 });
