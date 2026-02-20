@@ -215,6 +215,43 @@ userField: 'userId'; // Use doc.userId
 
 ---
 
+### Missing schema fields
+
+Mongoose removes keys that are not defined in the schema. If you configure `trackedFields`, `contextFields`, `userField`, `modelKeyId`, or `softDelete.field` with paths that are not present in the schema, those values may be stripped before the plugin can read them.
+
+**Solutions:**
+
+1. **Add the field to your schema** (recommended).
+
+```js
+const schema = new Schema({
+  created_by: Schema.Types.Mixed,
+  // ...other fields
+});
+```
+
+2. **Disable strict mode** (schema‑level or per operation).
+
+```js
+schema.set('strict', false);
+// or
+Model.create(doc, { strict: false });
+```
+
+3. **Pass user/context via `$locals` or query context** (no schema change).
+
+```js
+// Make sure you used contructor method ot create the data to make sure the $locals works
+const doc = new Model({ title: 'Post' });
+doc.$locals.created_by = { id: userId, name: 'Alice' };
+await doc.save();
+
+// For query updates/deletes, pass context
+await Model.updateOne({ _id: id }, { $set: { title: 'Updated' } }, { context: { created_by: user } });
+```
+
+---
+
 ### Soft Delete Option
 
 The `softDelete` option allows you to track "soft deletes"—where a document is marked as deleted by setting a specific field to a certain value, rather than being physically removed from the database.
