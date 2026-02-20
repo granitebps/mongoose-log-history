@@ -1019,15 +1019,21 @@ function collectTrackedFieldPaths(fields: TrackedField[], prefix = ''): string[]
       paths.push(...collectTrackedFieldPaths(field.trackedFields, basePath));
     }
 
-    if (field.contextFields && !Array.isArray(field.contextFields)) {
-      const docFields = field.contextFields.doc ?? [];
-      for (const docField of docFields) {
-        paths.push(docField);
-      }
+    if (field.contextFields) {
+      if (Array.isArray(field.contextFields)) {
+        for (const docField of field.contextFields) {
+          paths.push(docField);
+        }
+      } else {
+        const docFields = field.contextFields.doc ?? [];
+        for (const docField of docFields) {
+          paths.push(docField);
+        }
 
-      const itemFields = field.contextFields.item ?? [];
-      for (const itemField of itemFields) {
-        paths.push(`${basePath}.${itemField}`);
+        const itemFields = field.contextFields.item ?? [];
+        for (const itemField of itemFields) {
+          paths.push(`${basePath}.${itemField}`);
+        }
       }
     }
   }
@@ -1100,6 +1106,12 @@ function hasSchemaPath(schema: mongoose.Schema, path: string): boolean {
 }
 
 function warnIfMissingSchemaPaths(schema: mongoose.Schema, plugin: ChangeLogPlugin): void {
+  const strictMode = schema.get('strict');
+  const shouldWarn = strictMode === true || strictMode === 'throw';
+  if (!shouldWarn) {
+    return;
+  }
+
   const logger = plugin.logger || console;
   const missing = new Set<string>();
 
