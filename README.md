@@ -241,7 +241,7 @@ Model.create(doc, { strict: false });
 3. **Pass user/context via `$locals` or query context** (no schema change).
 
 ```js
-// Make sure you used contructor method ot create the data to make sure the $locals works
+// Make sure you used contructor method to create the data to make sure the $locals works
 const doc = new Model({ title: 'Post' });
 doc.$locals.created_by = { id: userId, name: 'Alice' };
 await doc.save();
