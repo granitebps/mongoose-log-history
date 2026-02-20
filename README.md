@@ -182,7 +182,7 @@ const Order = mongoose.model<IOrder>('Order', orderSchema);
 
 | Option             | Type    | Default      | Description                                                                                                                                            |
 | ------------------ | ------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `modelName`        | string  | model name   | Model identification (REQUIRED)                                                                                                                        |
+| `modelName`        | string  | -            | Model identification (REQUIRED)                                                                                                                        |
 | `modelKeyId`       | string  | `_id`        | ID key that identifies the model                                                                                                                       |
 | `softDelete`       | object  |              | Soft delete config: `{ field, value }`. When the specified field is set to the given value, the plugin logs a `delete` operation instead of an update. |
 | `contextFields`    | array   |              | Extra fields to include in the log context (array of field paths from the document itself; must be an array at the plugin level)                       |
@@ -191,7 +191,7 @@ const Order = mongoose.model<IOrder>('Order', orderSchema);
 | `maxBatchLog`      | number  | `1000`       | Max number of logs per batch operation                                                                                                                 |
 | `batchSize`        | number  | `100`        | Number of documents to process per batch in bulk hooks                                                                                                 |
 | `logger`           | object  | `console`    | Custom logger object (must support `.error` and `.warn` methods)                                                                                       |
-| `trackedFields`    | array   | `[]`         | Array of field configs to track (see below)                                                                                                            |
+| `trackedFields`    | array   | -            | Array of field configs to track (REQUIRED, see below)                                                                                                  |
 | `userField`        | string  | `created_by` | The field in the document to extract user info from (dot notation supported). Value can be any type (object, string, ID, etc.).                        |
 | `compressDocs`     | boolean | `false`      | Compress `original_doc` and `updated_doc` using gzip.                                                                                                  |
 
