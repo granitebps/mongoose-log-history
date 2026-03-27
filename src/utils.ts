@@ -355,7 +355,14 @@ export function validatePluginOptions(options: PluginOptions & { modelName: stri
   }
 
   if (options.softDelete) {
-    if (typeof options.softDelete.field !== 'string' || options.softDelete.value === undefined) {
+    if (typeof options.softDelete !== 'object' && typeof options.softDelete !== 'function') {
+      throw new Error('[mongoose-log-history] "softDelete" must be an object or a function.');
+    }
+
+    if (
+      typeof options.softDelete === 'object' &&
+      (typeof options.softDelete.field !== 'string' || options.softDelete.value === undefined)
+    ) {
       throw new Error('[mongoose-log-history] "softDelete" must be an object with "field" (string) and "value".');
     }
   }
