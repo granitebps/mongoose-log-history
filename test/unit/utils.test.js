@@ -180,6 +180,16 @@ describe('utils', () => {
       setByPath(obj, 'x.y.z', 'test');
       expect(obj.x.y.z).toBe('test');
     });
+    it('allows constructor as a normal nested field name', () => {
+      const obj = {};
+      setByPath(obj, 'metadata.constructor.name', 'Widget');
+      expect(obj).toEqual({ metadata: { constructor: { name: 'Widget' } } });
+    });
+    it('allows prototype as a normal nested field name', () => {
+      const obj = {};
+      setByPath(obj, 'metadata.prototype.version', 1);
+      expect(obj).toEqual({ metadata: { prototype: { version: 1 } } });
+    });
     it('ignores __proto__ at first segment and does not pollute', () => {
       delete Object.prototype.polluted;
       const obj = {};
