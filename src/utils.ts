@@ -183,8 +183,21 @@ export function getValueByPath(obj: Record<string, unknown> | null | undefined, 
  * @param path - The dot-notated path (e.g., 'a.b.c').
  * @param value - The value to set.
  */
+const UNSAFE_KEYS = new Set(['__proto__']);
+
 export function setByPath(obj: Record<string, unknown>, path: string, value: unknown): void {
   const parts = path.split('.');
+
+  for (let i = 0; i < parts.length; i++) {
+    if (UNSAFE_KEYS.has(parts[i])) {
+      return;
+    }
+
+    if (parts[i] === 'constructor' && parts[i + 1] === 'prototype') {
+      return;
+    }
+  }
+
   let current: Record<string, unknown> = obj;
   for (let i = 0; i < parts.length - 1; i++) {
     if (!current[parts[i]] || typeof current[parts[i]] !== 'object') {
