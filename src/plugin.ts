@@ -681,7 +681,7 @@ export class ChangeLogPlugin {
         const options = query.getOptions() ?? {};
         const context = (options as { context?: Record<string, unknown> }).context ?? {};
 
-        const trackedPaths = [...new Set(self.trackedFields.map((f) => f.value.split('.')[0]))];
+        const trackedPaths = getSelectTopLevelPaths(self);
 
         const originalDoc = (await model.findOne(filter).select(trackedPaths.join(' ')).lean()) as Record<
           string,
@@ -776,7 +776,7 @@ export class ChangeLogPlugin {
           userField: self.userField,
         });
 
-        const trackedPaths = [...new Set(self.trackedFields.map((f) => f.value.split('.')[0]))];
+        const trackedPaths = getSelectTopLevelPaths(self);
         modelId = getValueByPath(doc.toObject(), self.modelKeyId) as string | number | Types.ObjectId;
 
         if (isNew) {
@@ -950,7 +950,7 @@ export class ChangeLogPlugin {
         const options = query.getOptions() ?? {};
         const context = (options as { context?: Record<string, unknown> }).context ?? {};
 
-        const trackedPaths = [...new Set(self.trackedFields.map((f) => f.value.split('.')[0]))];
+        const trackedPaths = getSelectTopLevelPaths(self);
         const originalDocs = (await model.find(filter).select(trackedPaths.join(' ')).lean()) as Record<
           string,
           unknown
@@ -1039,6 +1039,68 @@ function collectTrackedFieldPaths(fields: TrackedField[], prefix = ''): string[]
   }
 
   return paths;
+}
+
+function collectTrackedDocContextPaths(fields: TrackedField[]): string[] {
+  const paths: string[] = [];
+
+  for (const field of fields) {
+    if (!field) continue;
+
+    if (field.contextFields) {
+      if (Array.isArray(field.contextFields)) {
+        for (const docField of field.contextFields) {
+          paths.push(docField);
+        }
+      } else {
+        for (const docField of field.contextFields.doc ?? []) {
+          paths.push(docField);
+        }
+      }
+    }
+
+    if (Array.isArray(field.trackedFields)) {
+      paths.push(...collectTrackedDocContextPaths(field.trackedFields));
+    }
+  }
+
+  return paths;
+}
+
+function getSelectTopLevelPaths(plugin: ChangeLogPlugin): string[] {
+  const paths = new Set<string>();
+
+  for (const field of plugin.trackedFields) {
+    if (field?.value) {
+      paths.add(field.value.split('.')[0]);
+    }
+  }
+
+  for (const path of plugin.contextFields ?? []) {
+    if (path) {
+      paths.add(path.split('.')[0]);
+    }
+  }
+
+  for (const path of collectTrackedDocContextPaths(plugin.trackedFields)) {
+    if (path) {
+      paths.add(path.split('.')[0]);
+    }
+  }
+
+  if (plugin.userField) {
+    paths.add(plugin.userField.split('.')[0]);
+  }
+
+  if (plugin.modelKeyId) {
+    paths.add(plugin.modelKeyId.split('.')[0]);
+  }
+
+  if (plugin.softDelete?.field) {
+    paths.add(plugin.softDelete.field.split('.')[0]);
+  }
+
+  return [...paths];
 }
 
 function hasSchemaPath(schema: mongoose.Schema, path: string): boolean {

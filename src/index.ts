@@ -11,7 +11,7 @@
  *
  * OPTIONS:
  *
- * @param options.modelName - Model identification (optional, defaults to the model name)
+ * @param options.modelName - Model identification (required)
  * @param options.modelKeyId - ID key that identifies the model. Will be the ID of the model (optional, defaults to _id)
  *
  * @param options.softDelete - Soft delete config (optional)
@@ -28,8 +28,10 @@
  * @param options.batchSize - Number of documents to process per batch in bulk hooks. Default is 100
  *
  * @param options.logger - Custom logger object (must support .error and .warn methods)
+ * @param options.userField - Field path used to extract user data from context/doc (optional, defaults to created_by)
+ * @param options.compressDocs - Compress original_doc and updated_doc with gzip when saveWholeDoc is true (optional, defaults to false)
  *
- * @param options.trackedFields - Array of field configurations to track
+ * @param options.trackedFields - Array of field configurations to track (required)
  * @param options.trackedFields[].value - Field path (supports dot notation)
  * @param options.trackedFields[].arrayType - Array handling type: 'simple' | 'custom-key'
  * @param options.trackedFields[].arrayKey - Identifier/key field for the object inside the array. Used in 'custom-key'

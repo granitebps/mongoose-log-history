@@ -137,3 +137,49 @@ describe('mongoose-log-history plugin - Soft Delete', () => {
     expect(logs.length).toBe(5);
   });
 });
+
+describe('mongoose-log-history plugin - Soft Delete (softDelete.field not in trackedFields)', () => {
+  let Item;
+  let LogHistoryItem;
+
+  beforeAll(() => {
+    const itemSchema = new mongoose.Schema({
+      name: String,
+      is_deleted: { type: Boolean, default: false },
+    });
+
+    itemSchema.plugin(changeLoggingPlugin, {
+      modelName: 'ItemSoftDeleteSeparate',
+      trackedFields: [{ value: 'name' }],
+      singleCollection: true,
+      softDelete: {
+        field: 'is_deleted',
+        value: true,
+      },
+    });
+
+    Item = mongoose.model('ItemSoftDeleteSeparate', itemSchema);
+    LogHistoryItem = getLogHistoryModel('ItemSoftDeleteSeparate', true);
+  });
+
+  afterEach(async () => {
+    await Item.deleteMany({});
+    await LogHistoryItem.deleteMany({});
+  });
+
+  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
+
+  it('logs delete (not update) when softDelete.field is outside trackedFields via updateOne', async () => {
+    const item = await Item.create({ name: 'Widget', is_deleted: false });
+    await LogHistoryItem.deleteMany({});
+
+    await Item.updateOne({ _id: item._id }, { $set: { is_deleted: true } });
+    await wait();
+
+    const deleteLogs = await LogHistoryItem.find({ model_id: item._id, change_type: 'delete' }).lean();
+    const updateLogs = await LogHistoryItem.find({ model_id: item._id, change_type: 'update' }).lean();
+
+    expect(deleteLogs.length).toBe(1);
+    expect(updateLogs.length).toBe(0);
+  });
+});

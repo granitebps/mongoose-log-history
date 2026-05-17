@@ -84,8 +84,8 @@ export interface TrackedField {
  */
 export interface PluginOptions {
   /**
-   * Model identification name. If not provided, will use the model name.
-   * This is used to identify which model the log entry belongs to.
+   * Model identification name.
+   * Required when using `changeLoggingPlugin`.
    */
   modelName?: string;
 
@@ -98,6 +98,7 @@ export interface PluginOptions {
   /**
    * Array of field configurations to track for changes.
    * Each field can have different tracking behavior (simple, array, custom-key).
+   * Required when using `changeLoggingPlugin`.
    */
   trackedFields?: TrackedField[];
 
