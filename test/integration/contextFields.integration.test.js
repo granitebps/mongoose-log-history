@@ -106,7 +106,7 @@ describe('mongoose-log-history plugin - Context Fields', () => {
   });
 
   it('includes global contextFields in log for updateMany even when context field is not in trackedFields', async () => {
-    await Order.insertMany([
+    const orders = await Order.insertMany([
       { status: 'pending', user: { name: 'UserA', role: 'admin' } },
       { status: 'pending', user: { name: 'UserB', role: 'editor' } },
     ]);
@@ -115,12 +115,13 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     await Order.updateMany({}, { $set: { status: 'done' } });
     await wait();
 
-    const logs = await LogHistory.find({ change_type: 'update' }).lean();
-    expect(logs.length).toBe(2);
-    for (const log of logs) {
-      const statusLog = log.logs.find((l) => l.field_name === 'status');
+    const expectedUsers = ['UserA', 'UserB'];
+    for (let i = 0; i < orders.length; i++) {
+      const logs = await LogHistory.find({ model_id: orders[i]._id, change_type: 'update' }).lean();
+      expect(logs.length).toBe(1);
+      const statusLog = logs[0].logs.find((l) => l.field_name === 'status');
       expect(statusLog).toBeDefined();
-      expect(statusLog.context.doc.user.name).toBeDefined();
+      expect(statusLog.context.doc.user.name).toBe(expectedUsers[i]);
     }
   });
 
