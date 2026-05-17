@@ -180,6 +180,35 @@ describe('utils', () => {
       setByPath(obj, 'x.y.z', 'test');
       expect(obj.x.y.z).toBe('test');
     });
+    it('ignores __proto__ at first segment and does not pollute', () => {
+      delete Object.prototype.polluted;
+      const obj = {};
+      setByPath(obj, '__proto__.polluted', 'yes');
+      expect({}.polluted).toBeUndefined();
+      expect(Object.prototype.polluted).toBeUndefined();
+      expect(obj).toEqual({});
+    });
+    it('ignores __proto__ at nested segment and does not pollute', () => {
+      delete Object.prototype.polluted;
+      const obj = {};
+      setByPath(obj, 'a.__proto__.polluted', 'yes');
+      expect({}.polluted).toBeUndefined();
+      expect(Object.prototype.polluted).toBeUndefined();
+      expect(obj).toEqual({});
+    });
+    it('ignores constructor.prototype traversal and does not pollute', () => {
+      delete Object.prototype.polluted;
+      const obj = {};
+      setByPath(obj, 'a.constructor.prototype.polluted', 'yes');
+      expect({}.polluted).toBeUndefined();
+      expect(Object.prototype.polluted).toBeUndefined();
+      expect(obj).toEqual({});
+    });
+    it('still sets safe nested paths normally after hardening', () => {
+      const obj = {};
+      setByPath(obj, 'safe.nested.value', 123);
+      expect(obj).toEqual({ safe: { nested: { value: 123 } } });
+    });
   });
 
   describe('valueToString', () => {
