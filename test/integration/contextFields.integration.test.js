@@ -125,6 +125,23 @@ describe('mongoose-log-history plugin - Context Fields', () => {
     }
   });
 
+  it('includes per-field contextFields in log for updateOne even when context field is not in trackedFields', async () => {
+    const order = await Order.create({
+      status: 'pending',
+      user: { name: 'PerFieldUser', role: 'viewer' },
+    });
+    await LogHistory.deleteMany({});
+
+    await Order.updateOne({ _id: order._id }, { $set: { status: 'shipped' } });
+    await wait();
+
+    const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
+    expect(logs.length).toBe(1);
+    const statusLog = logs[0].logs.find((l) => l.field_name === 'status');
+    expect(statusLog).toBeDefined();
+    expect(statusLog.context.doc.user.name).toBe('PerFieldUser');
+  });
+
   it('includes per-field contextFields (object: doc and item) in log for array of objects', async () => {
     const order = await Order.create({
       user: { name: 'Charlie', role: 'manager' },
