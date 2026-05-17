@@ -230,4 +230,36 @@ describe('mongoose-log-history plugin - User Extraction', () => {
     expect(logs.length).toBe(1);
     expect(logs[0].created_by).toBe('ContextWins');
   });
+
+  it('extracts user from userField (dot notation) on updateOne when userField not in trackedFields', async () => {
+    const schema = new mongoose.Schema({
+      status: String,
+      author: {
+        name: String,
+        email: String,
+      },
+    });
+    schema.plugin(changeLoggingPlugin, {
+      modelName: 'OrderUserFieldQuery',
+      trackedFields: [{ value: 'status' }],
+      singleCollection: true,
+      userField: 'author.name',
+    });
+    delete mongoose.connection.models.OrderUserFieldQuery;
+    const OrderUserFieldQuery = mongoose.model('OrderUserFieldQuery', schema);
+    const LogHistory = getLogHistoryModel('OrderUserFieldQuery', true);
+
+    const order = await OrderUserFieldQuery.create({
+      status: 'pending',
+      author: { name: 'QueryAuthor', email: 'q@example.com' },
+    });
+    await LogHistory.deleteMany({});
+
+    await OrderUserFieldQuery.updateOne({ _id: order._id }, { $set: { status: 'done' } });
+    await wait();
+
+    const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
+    expect(logs.length).toBe(1);
+    expect(logs[0].created_by).toBe('QueryAuthor');
+  });
 });
