@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 const { changeLoggingPlugin, getLogHistoryModel } = require('../../dist');
 
 describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId)', () => {
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   afterEach(async () => {
     // Clean up all models created during tests
     const modelNames = Object.keys(mongoose.connection.models);
@@ -36,7 +34,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Create document with string ID
       const stringId = 'user-12345';
       const doc = await Model.create({ _id: stringId, status: 'pending', name: 'Test' });
-      await wait();
 
       // Verify create log
       let logs = await LogHistory.find({ model_id: stringId }).lean();
@@ -47,7 +44,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Update document
       doc.status = 'completed';
       await doc.save();
-      await wait();
 
       // Verify update log
       logs = await LogHistory.find({ model_id: stringId }).lean();
@@ -83,7 +79,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
         { _id: 'doc-003', status: 'pending' },
       ];
       await Model.insertMany(docs);
-      await wait();
 
       // Verify all logs created
       const logs = await LogHistory.find({}).lean();
@@ -117,7 +112,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
 
       // Update many
       await Model.updateMany({ category: 'A' }, { $set: { status: 'approved' } });
-      await wait();
 
       const logs = await LogHistory.find({ change_type: 'update' }).lean();
       expect(logs.length).toBe(2);
@@ -145,7 +139,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Create document with number ID
       const numberId = 12345;
       const doc = await Model.create({ _id: numberId, status: 'pending', name: 'Test' });
-      await wait();
 
       // Verify create log
       let logs = await LogHistory.find({ model_id: numberId }).lean();
@@ -156,7 +149,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Update document
       doc.status = 'completed';
       await doc.save();
-      await wait();
 
       // Verify update log
       logs = await LogHistory.find({ model_id: numberId }).lean();
@@ -192,7 +184,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
         { _id: 1003, status: 'pending' },
       ];
       await Model.insertMany(docs);
-      await wait();
 
       // Verify all logs created
       const logs = await LogHistory.find({}).lean();
@@ -225,7 +216,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
 
       // Delete docs
       await Model.deleteMany({ _id: { $in: [2001, 2002] } });
-      await wait();
 
       const logs = await LogHistory.find({ change_type: 'delete' }).lean();
       expect(logs.length).toBe(2);
@@ -252,7 +242,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
 
       // Create document with default ObjectId
       const doc = await Model.create({ status: 'pending', name: 'Test' });
-      await wait();
 
       const objectId = doc._id;
 
@@ -265,7 +254,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Update document
       doc.status = 'completed';
       await doc.save();
-      await wait();
 
       // Verify update log
       logs = await LogHistory.find({ model_id: objectId }).lean();
@@ -294,7 +282,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       // Create with explicit ObjectId
       const customObjectId = new mongoose.Types.ObjectId();
       await Model.create({ _id: customObjectId, status: 'pending' });
-      await wait();
 
       const logs = await LogHistory.find({ model_id: customObjectId }).lean();
       expect(logs.length).toBe(1);
@@ -320,7 +307,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       const LogHistory = getLogHistoryModel('CustomKeyString', true);
 
       const doc = await Model.create({ customId: 'custom-123', status: 'pending' });
-      await wait();
 
       const logs = await LogHistory.find({ model_id: 'custom-123' }).lean();
       expect(logs.length).toBe(1);
@@ -344,7 +330,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       const LogHistory = getLogHistoryModel('CustomKeyNumber', true);
 
       const doc = await Model.create({ customId: 999, status: 'pending' });
-      await wait();
 
       const logs = await LogHistory.find({ model_id: 999 }).lean();
       expect(logs.length).toBe(1);
@@ -395,7 +380,6 @@ describe('mongoose-log-history plugin - Model ID Types (string, number, ObjectId
       const stringDoc = await StringModel.create({ _id: 'str-001', status: 'pending' });
       const numberDoc = await NumberModel.create({ _id: 5000, status: 'pending' });
       const objectIdDoc = await ObjectIdModel.create({ status: 'pending' });
-      await wait();
 
       // Verify all logs are in the same collection
       const allLogs = await LogHistory.find({}).lean();

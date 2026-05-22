@@ -39,12 +39,9 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('logs create via save (document hook)', async () => {
     const order = new Order({ status: 'pending' });
     await order.save();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -57,7 +54,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
 
   it('logs create via insertMany (plain object)', async () => {
     const [order] = await Order.insertMany([{ status: 'pending' }]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -70,7 +66,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
   it('logs create via insertMany (Mongoose document)', async () => {
     const doc = new Order({ status: 'pending' });
     const [order] = await Order.insertMany([doc]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -82,7 +77,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
   it('logs create with explicit _id', async () => {
     const customId = new mongoose.Types.ObjectId();
     await Order.insertMany([{ _id: customId, status: 'pending' }]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: customId }).lean();
     expect(logs.length).toBe(1);
@@ -102,7 +96,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
 
     const doc = new NoTrack({ foo: 'bar' });
     await doc.save();
-    await wait();
 
     const logs = await LogHistoryNoTrack.find({ model_id: doc._id }).lean();
 
@@ -113,7 +106,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
   it('handles missing/invalid input gracefully', async () => {
     const order = new Order({});
     await expect(order.save()).resolves.toBeDefined();
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -122,7 +114,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
 
   it('logs create with extra/unexpected fields', async () => {
     const [order] = await Order.insertMany([{ status: 'pending', foo: 'bar', bar: 123 }]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -131,7 +122,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
 
   it('logs create with null/undefined values', async () => {
     const [order] = await Order.insertMany([{ status: null }]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);
@@ -141,7 +131,6 @@ describe('mongoose-log-history plugin - Create Operation (all hooks and edge cas
   it('logs create with large document', async () => {
     const bigString = 'x'.repeat(10000);
     const [order] = await Order.insertMany([{ status: bigString }]);
-    await wait();
 
     const logs = await LogHistory.find({ model_id: order._id }).lean();
     expect(logs.length).toBe(1);

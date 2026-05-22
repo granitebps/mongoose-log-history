@@ -37,8 +37,6 @@ describe('mongoose-log-history plugin - Error Handling', () => {
     }
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('does not block document save if logging fails', async () => {
     const origCreate = LogHistory.create;
     LogHistory.create = () => {
@@ -57,7 +55,6 @@ describe('mongoose-log-history plugin - Error Handling', () => {
 
   it('does not block update if logging fails', async () => {
     const order = await Order.create({ status: 'pending' });
-    await wait();
 
     const origCreate = LogHistory.create;
     LogHistory.create = () => {
@@ -72,7 +69,6 @@ describe('mongoose-log-history plugin - Error Handling', () => {
 
   it('does not block delete if logging fails', async () => {
     const order = await Order.create({ status: 'pending' });
-    await wait();
 
     const origBulkWrite = LogHistory.bulkWrite;
     LogHistory.bulkWrite = () => {
@@ -87,7 +83,6 @@ describe('mongoose-log-history plugin - Error Handling', () => {
 
   it('does not block batch operations if logging fails', async () => {
     await Order.insertMany([{ status: 'a' }, { status: 'b' }]);
-    await wait();
 
     const origBulkWrite = LogHistory.bulkWrite;
     LogHistory.bulkWrite = () => {

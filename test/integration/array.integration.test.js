@@ -42,15 +42,12 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
     await LogHistory.deleteMany({});
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   describe('Simple array (arrayType: simple)', () => {
     it('logs add and remove in simple array', async () => {
       const order = await Order.create({ tags: ['a', 'b'] });
       await LogHistory.deleteMany({});
       order.tags = ['b', 'c'];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(1);
@@ -66,7 +63,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.tags = ['a', 'b'];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs[0].logs.some((l) => l.change_type === 'add' && l.to_value === 'b')).toBe(true);
@@ -77,7 +73,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.tags = ['a'];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs[0].logs.some((l) => l.change_type === 'remove' && l.from_value === 'b')).toBe(true);
@@ -88,7 +83,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.tags = ['a', 'b'];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(0);
@@ -99,7 +93,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.tags = null;
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(0);
@@ -120,7 +113,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
         { sku: 'C', qty: 4, price: 40 },
       ];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(1);
@@ -141,7 +133,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
         { sku: 'B', qty: 2, price: 20 },
       ];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs[0].logs.some((l) => l.change_type === 'add' && l.field_name === 'items')).toBe(true);
@@ -157,7 +148,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.items = [{ sku: 'A', qty: 1, price: 10 }];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs[0].logs.some((l) => l.change_type === 'remove' && l.field_name === 'items')).toBe(true);
@@ -170,7 +160,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.items = [{ sku: 'A', qty: 2, price: 15 }];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs[0].logs.some((l) => l.field_name === 'items.qty' && l.change_type === 'edit')).toBe(true);
@@ -184,7 +173,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.items = [{ sku: 'A', qty: 1, price: 10 }];
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(0);
@@ -195,7 +183,6 @@ describe('mongoose-log-history plugin - Array Field Tracking', () => {
       await LogHistory.deleteMany({});
       order.items = null;
       await order.save();
-      await wait();
 
       const logs = await LogHistory.find({ model_id: order._id, change_type: 'update' }).lean();
       expect(logs.length).toBe(0);

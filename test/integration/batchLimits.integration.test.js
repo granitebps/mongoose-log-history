@@ -34,8 +34,6 @@ describe('mongoose-log-history plugin - Batch Size and Max Batch Log', () => {
     warnSpy.mockRestore();
   });
 
-  const wait = () => new Promise((resolve) => setTimeout(resolve, 100));
-
   it('respects maxBatchLog limit in updateMany', async () => {
     await Order.insertMany([
       { status: 'a' },
@@ -47,7 +45,6 @@ describe('mongoose-log-history plugin - Batch Size and Max Batch Log', () => {
     ]);
     await LogHistory.deleteMany({});
     await Order.updateMany({}, { $set: { status: 'z' } });
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'update' }).lean();
     expect(logs.length).toBe(5);
@@ -61,7 +58,6 @@ describe('mongoose-log-history plugin - Batch Size and Max Batch Log', () => {
     await Order.insertMany([{ status: 'a' }, { status: 'a' }, { status: 'a' }, { status: 'a' }]);
     await LogHistory.deleteMany({});
     await Order.updateMany({}, { $set: { status: 'z' } });
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'update' }).lean();
     expect(logs.length).toBe(4);
@@ -78,7 +74,6 @@ describe('mongoose-log-history plugin - Batch Size and Max Batch Log', () => {
     ]);
     await LogHistory.deleteMany({});
     await Order.deleteMany({});
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'delete' }).lean();
     expect(logs.length).toBe(5);
@@ -91,7 +86,6 @@ describe('mongoose-log-history plugin - Batch Size and Max Batch Log', () => {
       docs.push({ status: 'a' });
     }
     await Order.insertMany(docs);
-    await wait();
 
     const logs = await LogHistory.find({ change_type: 'create' }).lean();
 
