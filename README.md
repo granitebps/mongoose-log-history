@@ -103,6 +103,30 @@ orderSchema.plugin(changeLoggingPlugin, {
 const Order = mongoose.model('Order', orderSchema);
 ```
 
+### Custom Log Connection
+
+Use `logConnection` when your audit logs should be stored in a different MongoDB connection than your main model data.
+
+```js
+const mongoose = require('mongoose');
+const { changeLoggingPlugin } = require('mongoose-log-history');
+
+const appConnection = await mongoose.createConnection(process.env.MONGO_URI).asPromise();
+const auditConnection = await mongoose.createConnection(process.env.AUDIT_MONGO_URI).asPromise();
+
+const orderSchema = new mongoose.Schema({
+  status: String,
+});
+
+orderSchema.plugin(changeLoggingPlugin, {
+  modelName: 'order',
+  trackedFields: [{ value: 'status' }],
+  logConnection: auditConnection,
+});
+
+const Order = appConnection.model('Order', orderSchema);
+```
+
 ### TypeScript Example
 
 ```typescript
@@ -585,7 +609,7 @@ const logEntry = buildLogEntry(
 
 ---
 
-#### `getLogHistoryModel(modelName, singleCollection)`
+#### `getLogHistoryModel(modelName, singleCollection, logConnection)`
 
 Returns the Mongoose model instance for the log history collection (either single or per-model).
 
@@ -596,6 +620,9 @@ const { getLogHistoryModel } = require('mongoose-log-history');
 
 const LogHistory = getLogHistoryModel('Order', true); // true for singleCollection
 await LogHistory.create(logEntry);
+
+const AuditLogHistory = getLogHistoryModel('Order', false, auditConnection);
+const auditLogs = await AuditLogHistory.find({ model_id: orderId });
 ```
 
 ---
@@ -650,6 +677,16 @@ await pruneLogHistory({
   singleCollection: true,
   keepLast: 50,
   modelId: '60f7c2b8e1b1c8a1b8e1b1c8',
+});
+```
+
+**Prune logs from a custom log connection:**
+
+```js
+await pruneLogHistory({
+  modelName: 'Order',
+  logConnection: auditConnection,
+  before: '30d',
 });
 ```
 

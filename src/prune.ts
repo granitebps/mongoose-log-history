@@ -1,6 +1,6 @@
 import { getLogHistoryModel } from './schema';
 import { parseHumanTime } from './utils';
-import { Types } from 'mongoose';
+import { Connection, Types } from 'mongoose';
 
 /**
  * Options for pruning log history entries.
@@ -11,6 +11,7 @@ export interface PruneOptions {
   before?: Date | string | number;
   keepLast?: number;
   modelId?: string | number | Types.ObjectId | unknown;
+  logConnection?: Connection;
 }
 
 /**
@@ -26,8 +27,9 @@ export async function pruneLogHistory({
   before,
   keepLast,
   modelId,
+  logConnection,
 }: PruneOptions): Promise<number> {
-  const LogHistory = getLogHistoryModel(modelName as string, singleCollection);
+  const LogHistory = getLogHistoryModel(modelName as string, singleCollection, logConnection);
 
   const query: Record<string, unknown> = {};
   if (before) {
