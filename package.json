@@ -1,6 +1,6 @@
 {
   "name": "mongoose-log-history",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A Mongoose plugin to automatically track and log changes (create, update, delete) to your models, with detailed audit history and flexible configuration.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
