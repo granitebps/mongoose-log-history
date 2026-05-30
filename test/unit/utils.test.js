@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const {
   isDate,
   isObject,
@@ -10,6 +11,7 @@ const {
   diffSimpleArray,
   setByPath,
   valueToString,
+  deepClone,
 } = require('../../dist/utils');
 
 describe('utils', () => {
@@ -241,6 +243,58 @@ describe('utils', () => {
       const obj = {};
       obj.self = obj;
       expect(typeof valueToString(obj)).toBe('string');
+    });
+  });
+
+  describe('deepClone', () => {
+    it('clones primitives', () => {
+      expect(deepClone(1)).toBe(1);
+      expect(deepClone('str')).toBe('str');
+      expect(deepClone(null)).toBe(null);
+      expect(deepClone(undefined)).toBe(undefined);
+    });
+
+    it('clones Date as a new Date instance', () => {
+      const d = new Date('2020-01-01T00:00:00.000Z');
+      const cloned = deepClone(d);
+      expect(cloned).toEqual(d);
+      expect(cloned).not.toBe(d);
+      expect(cloned instanceof Date).toBe(true);
+    });
+
+    it('clones ObjectId as a new ObjectId instance with the same value', () => {
+      const id = new mongoose.Types.ObjectId();
+      const cloned = deepClone(id);
+      expect(cloned.toHexString()).toBe(id.toHexString());
+      expect(cloned).not.toBe(id);
+      expect(cloned instanceof mongoose.Types.ObjectId).toBe(true);
+    });
+
+    it('does not serialize ObjectId to { buffer: {...} }', () => {
+      const id = new mongoose.Types.ObjectId();
+      const cloned = deepClone(id);
+      // buffer should be a Buffer instance, not a plain object with numeric keys
+      expect(Buffer.isBuffer(cloned.buffer)).toBe(true);
+      expect(typeof cloned.toHexString).toBe('function');
+    });
+
+    it('clones nested object containing ObjectId fields', () => {
+      const id = new mongoose.Types.ObjectId();
+      const obj = { _id: id, name: 'test', nested: { ref: id } };
+      const cloned = deepClone(obj);
+      expect(cloned._id.toHexString()).toBe(id.toHexString());
+      expect(cloned._id).not.toBe(id);
+      expect(cloned.nested.ref.toHexString()).toBe(id.toHexString());
+      expect(cloned.nested.ref).not.toBe(id);
+    });
+
+    it('clones arrays containing ObjectIds', () => {
+      const id = new mongoose.Types.ObjectId();
+      const arr = [id, { ref: id }];
+      const cloned = deepClone(arr);
+      expect(cloned[0].toHexString()).toBe(id.toHexString());
+      expect(cloned[0]).not.toBe(id);
+      expect(cloned[1].ref.toHexString()).toBe(id.toHexString());
     });
   });
 });
