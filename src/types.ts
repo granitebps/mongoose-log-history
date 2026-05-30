@@ -1,4 +1,4 @@
-import { Document, Model, Types } from 'mongoose';
+import { Connection, Document, Model, Types } from 'mongoose';
 
 /**
  * Supported change types for logging operations.
@@ -147,6 +147,12 @@ export interface PluginOptions {
    * Defaults to console.
    */
   logger?: Logger;
+
+  /**
+   * Optional Mongoose connection used for writing and reading log history.
+   * Defaults to Mongoose's default connection.
+   */
+  logConnection?: Connection;
 
   /**
    * Field path to extract user information from documents or context.

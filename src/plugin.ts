@@ -162,6 +162,7 @@ export class ChangeLogPlugin {
   public readonly batchSize: number;
   public readonly logger: Logger;
   public readonly userField: string;
+  public readonly logConnection?: mongoose.Connection;
   public readonly compressDocs: boolean;
 
   constructor(options: PluginOptions & { modelName: string }) {
@@ -178,6 +179,7 @@ export class ChangeLogPlugin {
     this.batchSize = options.batchSize ?? 100;
     this.logger = options.logger ?? console;
     this.userField = options.userField ?? 'created_by';
+    this.logConnection = options.logConnection;
     this.compressDocs = options.compressDocs === true;
   }
 
@@ -186,7 +188,7 @@ export class ChangeLogPlugin {
    * @returns The log history model for this plugin configuration.
    */
   public getLogHistoryModelPlugin(): LogHistoryModel {
-    return getLogHistoryModel(this.modelName, this.singleCollection);
+    return getLogHistoryModel(this.modelName, this.singleCollection, this.logConnection);
   }
 
   /**

@@ -347,6 +347,15 @@ export function validatePluginOptions(options: PluginOptions & { modelName: stri
     throw new Error('[mongoose-log-history] "modelName" option is required and must be a string.');
   }
 
+  if (
+    options.logConnection !== undefined &&
+    (!options.logConnection ||
+      typeof options.logConnection.model !== 'function' ||
+      typeof options.logConnection.collection !== 'function')
+  ) {
+    throw new Error('[mongoose-log-history] "logConnection" must be a valid Mongoose connection.');
+  }
+
   if (!options.trackedFields || !Array.isArray(options.trackedFields)) {
     throw new Error('[mongoose-log-history] "trackedFields" option must be an array.');
   }

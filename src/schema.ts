@@ -119,17 +119,30 @@ logHistorySchema.index({
  *
  * @param modelName - The name of the model being tracked.
  * @param singleCollection - Whether to use a single collection for all models or separate collections.
+ * @param logConnection - Optional Mongoose connection used to store and read log history instead of default connection.
  * @returns The Mongoose model for log history operations.
  */
-export function getLogHistoryModel(modelName: string, singleCollection = false): LogHistoryModel {
-  const collectionName = singleCollection ? 'log_histories' : `log_histories_${modelName}`;
-  const modelKey = singleCollection ? 'LogHistory' : `LogHistory_${modelName}`;
-
-  if (mongoose.models[modelKey]) {
-    return mongoose.models[modelKey] as LogHistoryModel;
+export function getLogHistoryModel(
+  modelName: string,
+  singleCollection = false,
+  logConnection?: mongoose.Connection
+): LogHistoryModel {
+  if (
+    logConnection !== undefined &&
+    (!logConnection || typeof logConnection.model !== 'function' || typeof logConnection.collection !== 'function')
+  ) {
+    throw new Error('[mongoose-log-history] "logConnection" must be a valid Mongoose connection.');
   }
 
-  return mongoose.model<LogHistoryDocument, LogHistoryModel>(modelKey, logHistorySchema, collectionName);
+  const collectionName = singleCollection ? 'log_histories' : `log_histories_${modelName}`;
+  const modelKey = singleCollection ? 'LogHistory' : `LogHistory_${modelName}`;
+  const connection = logConnection ?? mongoose.connection;
+
+  if (connection.models[modelKey]) {
+    return connection.models[modelKey] as LogHistoryModel;
+  }
+
+  return connection.model<LogHistoryDocument, LogHistoryModel>(modelKey, logHistorySchema, collectionName);
 }
 
 export { logSchema, logHistorySchema };
